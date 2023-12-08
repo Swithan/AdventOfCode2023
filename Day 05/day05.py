@@ -1,49 +1,74 @@
+import sys
 import re
+from collections import defaultdict
+D = open("day05.txt").read().strip()
+L = D.split('\n')
 
-with open("day05.txt") as file:
-    file = [l for l in file]
-    seeds = file[0]
-    seeds = re.findall(r'\d+', seeds)
+parts = D.split('\n\n')
+seed, *others = parts
+seed = [int(x) for x in seed.split(':')[1].split()]
 
-    maps = []
-    start = False
-    map = []
-    for line in file:
-        if start:
-            if '\n' == line:
-                maps.append(tuple(map))
-                map.clear()
-                start = False
-                continue
-            map.append(line)
-        if 'map:' in line:
-            start = True
-    
-    final = []
-    for seed in seeds:
-        out = int(seed)
-        for map in maps:
-            start_ranges = []
-            end_ranges = []
-            for range in map:
-                parts = re.findall(r'\d+', range)
-                start_ranges.append((parts[1], str(int(parts[1])+int(parts[2]))))
-                end_ranges.append((parts[0], str(int(parts[0])+int(parts[2]))))
-                if out >= int(parts[1]) and out <= int(parts[1])+int(parts[2]):
-                    out = int(parts[0]) + int(out - int(parts[1]))
-                    break
-        final.append((seed, out))
-    print(final)
+class Function:
+  def __init__(self, S):
+    lines = S.split('\n')[1:] # throw away name
+    # dst src sz
+    self.tuples: list[tuple[int,int,int]] = [[int(x) for x in line.split()] for line in lines]
+    #print(self.tuples)
+  def apply_one(self, x: int) -> int:
+    for (dst, src, sz) in self.tuples:
+      if src<=x<src+sz:
+        return x+dst-src
+    return x
 
-    min = final[0]
-    for i in final:
-        if i[1] < min[1]:
-            min = i
-    print(min)
-#for each seed:
-    #for each range
-        # check if in range source-range-start (column 2) (a>src-rng-start && a<src-rng-end (which is src-rng-start+range-length))
-        # if YES :
-            # compute new destination-range-end value on destination-range-start at index (which is seed-number - source-range-start)
-    # IF NO (else), keep seed number
-    # REPEAT ABOVE AT EACH STEPS
+  # list of [start, end) ranges
+  def apply_range(self, R):
+    A = []
+    for (dest, src, sz) in self.tuples:
+      src_end = src+sz
+      NR = []
+      while R:
+        # [st                                     ed)
+        #          [src       src_end]
+        # [BEFORE ][INTER            ][AFTER        )
+        (st,ed) = R.pop()
+        # (src,sz) might cut (st,ed)
+        before = (st,min(ed,src))
+        inter = (max(st, src), min(src_end, ed))
+        after = (max(src_end, st), ed)
+        if before[1]>before[0]:
+          NR.append(before)
+        if inter[1]>inter[0]:
+          A.append((inter[0]-src+dest, inter[1]-src+dest))
+        if after[1]>after[0]:
+          NR.append(after)
+      R = NR
+    return A+R
+
+Fs = [Function(s) for s in others]
+
+def f(R, o):
+  A = []
+  for line in o:
+    dest,src,sz = [int(x) for x in line.split()]
+    src_end = src+sz
+
+P1 = []
+for x in seed:
+  for f in Fs:
+    x = f.apply_one(x)
+  P1.append(x)
+print(min(P1))
+
+P2 = []
+pairs = list(zip(seed[::2], seed[1::2]))
+for st, sz in pairs:
+  # inclusive on the left, exclusive on the right
+  # e.g. [1,3) = [1,2]
+  # length of [a,b) = b-a
+  # [a,b) + [b,c) = [a,c)
+  R = [(st, st+sz)]
+  for f in Fs:
+    R = f.apply_range(R)
+  #print(len(R))
+  P2.append(min(R)[0])
+print(min(P2))
