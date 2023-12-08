@@ -1,4 +1,6 @@
 import re
+import time
+start_time = time.time()
 file = open('day06.txt')
 file = [l for l in file]
 times = file[0]
@@ -33,5 +35,6 @@ for race in range(len(times)):
         if travelled > min_distance:
             ways += 1
     total *= ways
+print("--- %s seconds ---" % (time.time() - start_time))
 
 print(total)
