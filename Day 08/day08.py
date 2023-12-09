@@ -1,7 +1,8 @@
+import math
 file = list(open("day08.txt"))
 
 instructions = file[0].replace('\n', "")
-print(instructions)
+
 file = file[2::]
 nodes = {}
 
@@ -12,18 +13,32 @@ for line in file:
     right = options.split(", ")[1].split(")")[0]
     nodes[node] = (left, right)
 
-print(nodes)
 
-steps = 0
-curr_pos = "AAA"
-while True:
-    for side in instructions:
+starts = []
+ends = []
+for node in nodes.keys():
+    if node[2] == "A": starts.append(node)
+    elif node[2] == "Z": ends.append(node)
 
-        curr_pos = nodes[curr_pos][0] if side == "L" else nodes[curr_pos][1]
-        steps+=1
-        if curr_pos == "ZZZ":
+lcm = []
+for start in starts:
+    steps = 0
+
+    curr_pos = start
+
+    while True:
+        for side in instructions:
+
+            curr_pos = nodes[curr_pos][0] if side == "L" else nodes[curr_pos][1]
+            steps+=1
+            if curr_pos in ends:
+                break
+        if curr_pos in ends:
             break
-    if curr_pos == "ZZZ":
-        break
-print(steps)
+    lcm.append(steps)
 
+result = 1
+
+for i in lcm:
+    result = result*i//math.gcd(result, i)
+print(result)
