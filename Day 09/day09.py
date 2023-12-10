@@ -1,27 +1,12 @@
-import re
-file = list(open("day09.txt"))
+l = [[int(i) for i in s.split()] for s in open('day09.txt').read().split('\n') if s.strip()]
 
+def n(l):
+	if sum(i != 0 for i in l) == 0:
+		return 0
+	m = []
+	for i in range(len(l)-1):
+		m.append(l[i+1]-l[i])
+	return l[-1] + n(m)
 
-def difference(input, last, total):
-    output = []
-    for i in range(1, len(input)):
-        output.append(input[i] - input[i-1])
-    if abs(output[-2]) == abs(output[-1]):
-        total += last + output[0]
-        return total
-    total += output[-1]
-    total = difference(output, last, total)
-    return total
-
-
-sum = 0
-for line in file:
-    report = re.findall(r"\d+", line)
-    report = [int(i) for i in report]
-
-    total = difference(report, report[-1], 0)
-    sum += total
-
-    print("My sum : ", sum)
-print("sum")
-print(sum)
+print(sum(n(i) for i in l))
+print(sum(n(i[::-1]) for i in l))
