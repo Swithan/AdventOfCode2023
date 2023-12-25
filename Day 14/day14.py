@@ -1,40 +1,71 @@
-file = [s for s in open('day14.txt').read().split('\n') if s.strip()]
+
+CYCLES = 1000000000
+
+with open("day14.txt", "r") as file:
+    input = tuple(file.read().splitlines())
 
 
-def check_vertical(pattern):
-	columns = ["" for i in range(len(pattern[0]))]
-	for p in pattern:
-		for i, c in enumerate(p):
-			columns[i] += c
-	return columns
+def slide_rocks_north(grid):
+    # transpose
+    grid = list(map("".join, zip(*grid)))
+    new_grid = []
+
+    for row in grid:
+        ordered_rows = []
+        for group in row.split("#"):
+            ordered_rows.append("".join(sorted(group, reverse=True)))
+
+        new_grid.append("#".join(ordered_rows))
+
+    return tuple(list(map("".join, zip(*new_grid))))
 
 
+def print_grid(grid):
+    for row in grid:
+        print(row)
+    print()
 
 
-vertical = check_vertical(file)
+# 1 cycle = move rocks north, west, south, east
+def cycle(grid):
+    for _ in range(4):
+        grid = slide_rocks_north(grid)
+        # rotare 90 degrees
+        grid = tuple(["".join(row[::-1]) for row in zip(*grid)])
 
-tilt = []
-load = len(vertical[0])
+    return grid
 
-for v in vertical:
-	last_o_index = v.rfind('O')
 
-	if last_o_index != -1:
-		tilt.append(v[:last_o_index + 1])
-x = []
-for t in tilt:
-	s = t.split("#")
-	index = 0
-	a = 0
-	sub_total = 0
-	for p in s:
-		for i, c in enumerate(p):
-			if c == "O":
-				sub_total += load - (i + index) + a
-			else:
-				a += 1
-		a = 0
-		index += len(p)+1
-	x.append(sub_total)
+solution1 = 0
+solution2 = 0
 
-print(sum(x))
+grid_slided = slide_rocks_north(input)
+solution1 = sum(
+    row.count("O") * (len(grid_slided) - i) for i, row in enumerate(grid_slided)
+)
+
+print("Solution 1:", solution1)
+
+seen = {input}
+seen_list = [input]
+
+grid_cycle = input
+for i in range(CYCLES):
+    grid_cycle = cycle(grid_cycle)
+    # print_grid(grid_cycle)
+
+    if grid_cycle in seen:
+        break
+    seen.add(grid_cycle)
+    seen_list.append(grid_cycle)
+
+first_cycle_grid_index = seen_list.index(grid_cycle)
+final_grid = seen_list[
+    (CYCLES - first_cycle_grid_index) % (i + 1 - first_cycle_grid_index)
+    + first_cycle_grid_index
+]
+
+solution2 = sum(
+    row.count("O") * (len(final_grid) - i) for i, row in enumerate(final_grid)
+)
+print("Solution 2:", solution2)
